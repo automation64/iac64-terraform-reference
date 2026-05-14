@@ -42,4 +42,10 @@ locals {
     true,
     false
   ])
+
+  sample__set_string_with_null = toset([
+    "item1",
+    null,
+    "item3"
+  ])
 }

@@ -1,3 +1,4 @@
+# Reference: https://developer.hashicorp.com/terraform/language/meta-arguments/count
 resource "random_id" "meta__count" {
   count       = 2
   byte_length = 4

@@ -1,0 +1,1 @@
+# Referenece: https://developer.hashicorp.com/terraform/language/values/variables

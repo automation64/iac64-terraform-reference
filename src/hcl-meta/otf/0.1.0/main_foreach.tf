@@ -26,3 +26,11 @@ resource "random_id" "meta_foreach__set_string" {
   byte_length = 8
   prefix      = each.value
 }
+
+# anti-example # for_each requires that all elements of the collection are not null
+# anti-example # resource "random_id" "meta_foreach__set_string_with_null" {
+# anti-example #   for_each = local.sample__set_string_with_null
+# anti-example # 
+# anti-example #   byte_length = 8
+# anti-example #   prefix      = each.value
+# anti-example # }

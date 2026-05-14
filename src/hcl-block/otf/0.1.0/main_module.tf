@@ -1,4 +1,4 @@
-# Reference: https://opentofu.org/docs/language/modules/sources/#module-registry
+# Reference: https://developer.hashicorp.com/terraform/language/block/module
 module "module__registry_opentofu" {
   source  = "automation64/catalog/lib"
   version = "v1.0.0"

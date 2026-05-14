@@ -13,7 +13,7 @@
 # limitations under the License.
 #######################################
 
-source ./bin/dev-set || { echo 'dev-set:Error: unable to load dev environment' 2>&1 && exit 1; }
+source ./bin/dev-set || exit 1
 source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-fs.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-txt.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-xsv.bash" &&
@@ -24,9 +24,9 @@ source ./bin/dev-env-iac64 || exit 1
 
 function my_download() {
   bl64_dbg_app_show_function
-  "$DEV_LIB_IAC64_TOOL_LIB_KUBELINTER" &&
-    "$DEV_LIB_IAC64_TOOL_LIB_KUBESCAPE" &&
-    "$DEV_LIB_IAC64_TOOL_LIB_KUBECTL"
+  "$DEV_LIB_IAC64_TOOL_LIB_OPENTOFU" &&
+    "$DEV_LIB_IAC64_TOOL_LIB_TFLINT" &&
+    "$DEV_LIB_IAC64_TOOL_LIB_TFSEC"
 }
 
 function my_initialize() {
@@ -34,8 +34,8 @@ function my_initialize() {
   dev_bin64_task_initialize
 }
 
-bl64_lib_script_version_set '1.2.0'
-bl64_msg_help_about_set 'Initialize module resources for the Kustomize driver'
+bl64_lib_script_version_set '2.0.0'
+bl64_msg_help_about_set 'Initialize module resources for the OpenTofu driver'
 dev_bin64_initialize && my_initialize || exit $?
 
 bl64_msg_show_batch_start "$BL64_SCRIPT_ID"

@@ -13,7 +13,8 @@
 # limitations under the License.
 #######################################
 
-source ./bin/dev-set || { echo 'dev-set:Error: unable to load dev environment' 2>&1 && exit 1; }
+export DEV_PROFILE='none'
+source ./bin/dev-set || exit 1
 source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-fs.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-txt.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-xsv.bash" &&
@@ -23,24 +24,21 @@ source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-fs.bash" &&
 source ./bin/dev-env-iac64 || exit 1
 
 declare MY_COMMAND="${1:-}"
-declare MY_OPTION=''
-declare MY_PROFILE=''
-declare MY_MODULE=''
-declare MY_VERSION=''
-declare MY_SHARED='0.1.0'
-declare MY_GLOBAL='0.1.0'
+declare MY_CONFIRMATION='NONE'
 declare MY_DRIVER_NAME=''
 declare MY_DRIVER_TAG=''
-declare MY_CONFIRMATION='NONE'
-declare MY_VERBOSE='TIME2'
+declare MY_GLOBAL='0.1.0'
+declare MY_MODULE=''
+declare MY_OPTION=''
+declare MY_PROFILE=''
+declare MY_SHARED='0.1.0'
+declare MY_VERSION=''
 
-declare MY_BL64_VERSION='22.9.0'
 declare MY_COMMAND_BLT='blt'
 declare MY_COMMAND_BUILD='build'
 declare MY_COMMAND_CONSOLE='console'
 declare MY_COMMAND_DEPLOY='deploy'
 declare MY_COMMAND_HELP='help'
-declare MY_COMMAND_INIT='init'
 declare MY_COMMAND_LINT='lint'
 declare MY_COMMAND_NONE='none'
 declare MY_COMMAND_REMOVE='remove'
@@ -145,10 +143,10 @@ function my_run() {
 
 function my_env_export() {
   bl64_dbg_app_show_function
+
   bl64_dbg_app_show_info 'DevBin64 settings'
-  DEV_VERBOSE="$MY_VERBOSE"
-  DEV_PROFILE="$MY_PROFILE"
-  source ./bin/dev-set || return $?
+  source "${DEV_PATH_BIN}/dev-profile-set" "$MY_PROFILE" ||
+    return $?
 
   bl64_dbg_app_show_info 'IAC64 settings'
   DEV_ENV_IAC64_PROFILE="$MY_PROFILE"
@@ -182,13 +180,10 @@ function my_env_export() {
 function my_initialize() {
   bl64_dbg_app_show_function
   dev_bin64_task_initialize &&
+    [[ -n "$MY_OPTION" && -n "$MY_COMMAND" ]] ||
+    { bl64_msg_help_show && return 1; }
 
-  [[ -n "$MY_OPTION" && -n "$MY_COMMAND" ]] || { bl64_msg_help_show && return 1; }
   case "$MY_COMMAND" in
-    "$MY_COMMAND_INIT")
-      [[ "$MY_DRIVER_NAME" == "$DEV_ENV_IAC64_DRIVER_NAME_BASH" ]] &&
-        MY_COMMAND="$MY_COMMAND_NONE"
-      ;;
     "$MY_COMMAND_BUILD")
       [[ "$MY_DRIVER_NAME" == "$DEV_ENV_IAC64_DRIVER_NAME_HELM" || "$MY_DRIVER_NAME" == "$DEV_ENV_IAC64_DRIVER_NAME_KUSTOMIZE" || "$MY_DRIVER_NAME" == "$DEV_ENV_IAC64_DRIVER_NAME_ANSIBLE" || "$MY_DRIVER_NAME" == "$DEV_ENV_IAC64_DRIVER_NAME_BASH" ]] &&
         MY_COMMAND="$MY_COMMAND_NONE"
@@ -222,12 +217,12 @@ function my_initialize() {
   esac
 
   MY_TASK="${DEV_PATH_BIN}/dev-${MY_COMMAND}-iac64-${MY_DRIVER_NAME}"
-  bl64_lib_script_minver_check "$MY_BL64_VERSION" &&
+  bl64_lib_script_minver_check "$DEV_LIB_IAC64_REQUIRED_BASHLIB64" &&
     bl64_check_parameter 'MY_PROFILE' &&
     bl64_check_parameter 'MY_MODULE' &&
     bl64_check_parameter 'MY_VERSION' &&
     bl64_check_parameter 'MY_DRIVER_NAME' &&
-    dev_bin64_task_show_setup \
+    bl64_msg_show_setup "$BL64_VAR_DEFAULT" \
       'MY_PROFILE' \
       'MY_DRIVER_NAME' \
       'MY_MODULE' \
@@ -236,7 +231,7 @@ function my_initialize() {
       'MY_GLOBAL'
 }
 
-bl64_lib_script_version_set '2.2.0'
+bl64_lib_script_version_set '3.0.2'
 bl64_msg_help_usage_set 'iac64 <COMMAND> <-p profile> <-m module> <-v version> <-A|-B|-H|-K|-O> [-s shared] [-g global] [-D Debug] [-h]'
 bl64_msg_help_about_set 'Opinionated Infrastructure-as-Code (IaC) development and deployment tool.'
 bl64_msg_help_parameters_set \
@@ -284,7 +279,7 @@ while getopts ':p:m:v:s:g:Z:V:D:ABHKO' MY_OPTION; do
     s) MY_SHARED="$OPTARG" ;;
     g) MY_GLOBAL="$OPTARG" ;;
     Z) MY_CONFIRMATION="$OPTARG" ;;
-    V) MY_VERBOSE="$OPTARG" ;;
+    V) DEV_VERBOSE="$OPTARG" ;;
     D) DEV_CICD_DEBUG="$OPTARG" ;;
     A)
       MY_DRIVER_NAME="$DEV_ENV_IAC64_DRIVER_NAME_ANSIBLE"
@@ -308,8 +303,7 @@ while getopts ':p:m:v:s:g:Z:V:D:ABHKO' MY_OPTION; do
       ;;
   esac
 done
-bl64_dbg_set_level "${DEV_CICD_DEBUG:-NONE}" && bl64_msg_set_format "$MY_VERBOSE" && bl64_msg_all_enable_verbose && bl64_dbg_set_level "$DEV_CICD_DEBUG" && my_initialize || exit $?
-
+dev_bin64_initialize && my_initialize || exit $?
 bl64_msg_show_batch_start "${BL64_SCRIPT_ID}:$MY_COMMAND"
 my_run
 bl64_msg_show_batch_finish $? "${BL64_SCRIPT_ID}:$MY_COMMAND"
