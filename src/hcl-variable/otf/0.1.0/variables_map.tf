@@ -1,3 +1,4 @@
+# Reference: https://developer.hashicorp.com/terraform/language/expressions/type-constraints#map
 variable "variable__map" {
   description = "A map with string keys and values"
   sensitive   = false

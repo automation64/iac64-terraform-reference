@@ -13,31 +13,47 @@
 # limitations under the License.
 #######################################
 
-source ./bin/dev-set || { echo 'dev-set:Error: unable to load dev environment' 2>&1 && exit 1; }
-source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-fs.bash" &&
+source ./bin/dev-set || exit 1
+source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-rxtx.bash" &&
+  source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-api.bash" &&
+  source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-vcs.bash" &&
+  source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-fs.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-txt.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-xsv.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-fmt.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-module-bsh.bash" &&
   source "${DEV_LIB_BASHLIB64_TARGET}/bashlib64-core.bash" || exit 1
-source ./bin/dev-env-iac64 || exit 1
+source ./bin/dev-env-git || exit 1
 
-function my_download() {
+function my_close() {
   bl64_dbg_app_show_function
-  "$DEV_LIB_IAC64_TOOL_LIB_HELM" &&
-    "$DEV_LIB_IAC64_TOOL_LIB_KUBECTL" &&
-    "$DEV_LIB_IAC64_TOOL_LIB_PKLLANG"
+  bl64_msg_show_task "switch to main branch (${DEV_GIT_BRANCH_MAIN})"
+  bl64_vcs_run_git checkout "$DEV_GIT_BRANCH_MAIN" || return $?
+
+  bl64_msg_show_task "delete release branch (local/${DEV_GIT_BRANCH_RELEASE})"
+  bl64_vcs_run_git branch -d "$DEV_GIT_BRANCH_RELEASE" || return $?
+
+  bl64_msg_show_task "delete feature branch (${DEV_GIT_REMOTE_ORIGIN}/${DEV_GIT_BRANCH_FEATURE})"
+  bl64_vcs_run_git branch -df "$DEV_GIT_BRANCH_FEATURE" &&
+    bl64_vcs_run_git push -d "$DEV_GIT_REMOTE_ORIGIN" "$DEV_GIT_BRANCH_FEATURE" &&
+    bl64_vcs_run_git remote prune "$DEV_GIT_REMOTE_ORIGIN"
 }
 
 function my_initialize() {
   bl64_dbg_app_show_function
-  dev_bin64_task_initialize
+  dev_bin64_task_initialize &&
+    dev_git_check_repo_root &&
+    bl64_vcs_setup &&
+    dev_bin64_task_show_setup \
+      'DEV_GIT_REMOTE_ORIGIN' \
+      'DEV_GIT_BRANCH_RELEASE' \
+      'DEV_GIT_BRANCH_FEATURE'
 }
 
 bl64_lib_script_version_set '1.0.0'
-bl64_msg_help_about_set 'Initialize module resources for the Helm driver'
+bl64_msg_help_about_set 'Close release and feature branches'
 dev_bin64_initialize && my_initialize || exit $?
 
 bl64_msg_show_batch_start "$BL64_SCRIPT_ID"
-my_download
+my_close
 bl64_msg_show_batch_finish $? "$BL64_SCRIPT_ID"
